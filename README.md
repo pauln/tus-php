@@ -1,3 +1,9 @@
+# Tus PHP for PHP5
+The [main Tus PHP project](https://github.com/ankitpokhrel/tus-php) is written for PHP7, and is not compatible with earlier versions of PHP due to its use of new PHP7 syntax / language features.  This fork is intended to make the client implementation usable to migrate files from legacy PHP applications (tested on PHP5.6, but may well work on earlier versions too) into modern systems which use the Tus resumable uplaod protocol.  As such, minimal effort has been put into the server code - if you want to run a Tus server on PHP5 for some reason, you may need to do more than just use this fork.  Some work has, however, been done to ensure that the client implementation can successfully upload files to a [`tusd`](https://github.com/tus/tusd) server.
+
+The remainder of this README is unmodified from the original/upstream, so may not be entirely applicable to or accurate for this fork.
+
+
 > ALERT: The project is still in its initial stage. Some implementations might change in the future. Feel free to try and report any issues. Pull requests and project recommendations are more than welcome!
 
 # Tus PHP
