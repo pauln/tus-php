@@ -41,6 +41,9 @@ class Client extends AbstractTus
     /** @var string */
     protected $checksumAlgorithm = 'sha256';
 
+    /** @var string */
+    protected $baseUri;
+
     /**
      * Client constructor.
      *
@@ -52,6 +55,8 @@ class Client extends AbstractTus
         $this->client = new GuzzleClient([
             'base_uri' => $baseUrl,
         ]);
+
+        $this->baseUri = $baseUrl;
 
         $this->setCache($cacheAdapter);
     }
@@ -256,7 +261,7 @@ class Client extends AbstractTus
         }
 
         // Now, resume upload with PATCH request.
-        return $this->sendPatchRequest($key, $bytes);
+        return $this->sendPatchRequest($this->getKey(), $bytes);
     }
 
     /**
@@ -291,17 +296,21 @@ class Client extends AbstractTus
     public function create($key)
     {
         $headers = [
+            'Tus-Resumable' => self::TUS_PROTOCOL_VERSION,
             'Upload-Length' => $this->fileSize,
-            'Upload-Key' => $key,
             'Upload-Checksum' => $this->getUploadChecksumHeader(),
             'Upload-Metadata' => 'filename ' . base64_encode($this->fileName),
         ];
+
+        if (!empty($key)) {
+            $headers['Upload-Key'] = $key;
+        }
 
         if ($this->isPartial()) {
             $headers += ['Upload-Concat' => 'partial'];
         }
 
-        $response = $this->getClient()->post($this->apiPath, [
+        $response = $this->getClient()->post($this->apiPath . '/', [
             'headers' => $headers,
         ]);
 
@@ -309,6 +318,16 @@ class Client extends AbstractTus
 
         if (HttpResponse::HTTP_CREATED !== $statusCode) {
             throw new FileException('Unable to create resource.');
+        }
+
+        if (empty($key)) {
+            // Extract key from response headers, if present
+            $location = current($response->getHeader('Location'));
+            if ($location !== false) {
+                $basePath = $this->baseUri . $this->apiPath . '/';
+                $newKey = str_replace($basePath, '', $location);
+                $this->setKey($newKey);
+            }
         }
     }
 
@@ -324,6 +343,7 @@ class Client extends AbstractTus
     {
         $response = $this->getClient()->post($this->apiPath, [
             'headers' => [
+                'Tus-Resumable' => self::TUS_PROTOCOL_VERSION,
                 'Upload-Length' => $this->fileSize,
                 'Upload-Key' => $key,
                 'Upload-Checksum' => $this->getUploadChecksumHeader(),
@@ -333,7 +353,7 @@ class Client extends AbstractTus
         ]);
 
         $data       = json_decode($response->getBody(), true);
-        $checksum   = $data['data']['checksum'] ?? null;
+        $checksum   = $data['data']['checksum'] ? $data['data']['checksum'] : null;
         $statusCode = $response->getStatusCode();
 
         if (HttpResponse::HTTP_CREATED !== $statusCode || ! $checksum) {
@@ -404,7 +424,11 @@ class Client extends AbstractTus
      */
     protected function sendHeadRequest($key)
     {
-        $response = $this->getClient()->head($this->apiPath . '/' . $key);
+        $response = $this->getClient()->head($this->apiPath . '/' . $key, [
+            'headers' => [
+                'Tus-Resumable' => self::TUS_PROTOCOL_VERSION,
+            ],
+        ]);
 
         $statusCode = $response->getStatusCode();
 
@@ -420,6 +444,7 @@ class Client extends AbstractTus
      *
      * @param string $key
      * @param int    $bytes
+     * @param int    $offset
      *
      * @throws Exception
      * @throws FileException
@@ -427,13 +452,16 @@ class Client extends AbstractTus
      *
      * @return int
      */
-    protected function sendPatchRequest($key, $bytes)
+    protected function sendPatchRequest($key, $bytes, $offset = 0)
     {
         $data    = $this->getData($key, $bytes);
+
         $headers = [
+            'Tus-Resumable' => self::TUS_PROTOCOL_VERSION,
             'Content-Type' => 'application/offset+octet-stream',
             'Content-Length' => strlen($data),
             'Upload-Checksum' => $this->getUploadChecksumHeader(),
+            'Upload-Offset' => $offset,
         ];
 
         if ($this->isPartial()) {
