@@ -47,7 +47,7 @@ class Client extends AbstractTus
      * @param string           $baseUrl
      * @param Cacheable|string $cacheAdapter
      */
-    public function __construct(string $baseUrl, $cacheAdapter = 'file')
+    public function __construct($baseUrl, $cacheAdapter = 'file')
     {
         $this->client = new GuzzleClient([
             'base_uri' => $baseUrl,
@@ -64,7 +64,7 @@ class Client extends AbstractTus
      *
      * @return Client
      */
-    public function file(string $file, string $name = null) : self
+    public function file($file, $name = null)
     {
         $this->filePath = $file;
 
@@ -72,7 +72,7 @@ class Client extends AbstractTus
             throw new FileException('Cannot read file: ' . $file);
         }
 
-        $this->fileName = $name ?? basename($this->filePath);
+        $this->fileName = isset($name) ? $name : basename($this->filePath);
         $this->fileSize = filesize($file);
 
         return $this;
@@ -95,7 +95,7 @@ class Client extends AbstractTus
      *
      * @return Client
      */
-    public function setFileName(string $name) : self
+    public function setFileName($name)
     {
         $this->fileName = $name;
 
@@ -127,7 +127,7 @@ class Client extends AbstractTus
      *
      * @return GuzzleClient
      */
-    public function getClient() : GuzzleClient
+    public function getClient()
     {
         return $this->client;
     }
@@ -137,7 +137,7 @@ class Client extends AbstractTus
      *
      * @return string
      */
-    public function getChecksum() : string
+    public function getChecksum()
     {
         if (empty($this->checksum)) {
             $this->checksum = hash_file($this->getChecksumAlgorithm(), $this->getFilePath());
@@ -153,7 +153,7 @@ class Client extends AbstractTus
      *
      * @return Client
      */
-    public function setKey(string $key) : self
+    public function setKey($key)
     {
         $this->key = $key;
 
@@ -165,7 +165,7 @@ class Client extends AbstractTus
      *
      * @return string
      */
-    public function getKey() : string
+    public function getKey()
     {
         return $this->key;
     }
@@ -177,7 +177,7 @@ class Client extends AbstractTus
      *
      * @return Client
      */
-    public function setChecksumAlgorithm(string $algorithm) : self
+    public function setChecksumAlgorithm($algorithm)
     {
         $this->checksumAlgorithm = $algorithm;
 
@@ -189,7 +189,7 @@ class Client extends AbstractTus
      *
      * @return string
      */
-    public function getChecksumAlgorithm() : string
+    public function getChecksumAlgorithm()
     {
         return $this->checksumAlgorithm;
     }
@@ -199,7 +199,7 @@ class Client extends AbstractTus
      *
      * @return bool
      */
-    public function isPartial() : bool
+    public function isPartial()
     {
         return $this->partial;
     }
@@ -209,7 +209,7 @@ class Client extends AbstractTus
      *
      * @return int
      */
-    public function getPartialOffset() : int
+    public function getPartialOffset()
     {
         return $this->partialOffset;
     }
@@ -221,7 +221,7 @@ class Client extends AbstractTus
      *
      * @return self
      */
-    public function seek(int $offset) : self
+    public function seek($offset)
     {
         $this->partialOffset = $offset;
 
@@ -239,7 +239,7 @@ class Client extends AbstractTus
      *
      * @return int
      */
-    public function upload(int $bytes = -1) : int
+    public function upload($bytes = -1)
     {
         $bytes = $bytes < 0 ? $this->getFileSize() : $bytes;
         $key   = $this->getKey();
@@ -247,7 +247,9 @@ class Client extends AbstractTus
         try {
             // Check if this upload exists with HEAD request.
             $this->sendHeadRequest($key);
-        } catch (FileException | ClientException $e) {
+        } catch (FileException $e) {
+            $this->create($key);
+        } catch (ClientException $e) {
             $this->create($key);
         } catch (ConnectException $e) {
             throw new ConnectionException("Couldn't connect to server.");
@@ -268,7 +270,9 @@ class Client extends AbstractTus
 
         try {
             $offset = $this->sendHeadRequest($key);
-        } catch (FileException | ClientException $e) {
+        } catch (FileException $e) {
+            return false;
+        } catch (ClientException $e) {
             return false;
         }
 
@@ -284,7 +288,7 @@ class Client extends AbstractTus
      *
      * @return void
      */
-    public function create(string $key)
+    public function create($key)
     {
         $headers = [
             'Upload-Length' => $this->fileSize,
@@ -316,7 +320,7 @@ class Client extends AbstractTus
      *
      * @return string
      */
-    public function concat(string $key, ...$partials) : string
+    public function concat($key, ...$partials)
     {
         $response = $this->getClient()->post($this->apiPath, [
             'headers' => [
@@ -348,7 +352,7 @@ class Client extends AbstractTus
      *
      * @return void
      */
-    public function delete(string $key)
+    public function delete($key)
     {
         try {
             $this->getClient()->delete($this->apiPath . '/' . $key, [
@@ -372,7 +376,7 @@ class Client extends AbstractTus
      *
      * @return void
      */
-    protected function partial(bool $state = true)
+    protected function partial($state = true)
     {
         $this->partial = $state;
 
@@ -398,7 +402,7 @@ class Client extends AbstractTus
      *
      * @return int
      */
-    protected function sendHeadRequest(string $key) : int
+    protected function sendHeadRequest($key)
     {
         $response = $this->getClient()->head($this->apiPath . '/' . $key);
 
@@ -423,7 +427,7 @@ class Client extends AbstractTus
      *
      * @return int
      */
-    protected function sendPatchRequest(string $key, int $bytes) : int
+    protected function sendPatchRequest($key, $bytes)
     {
         $data    = $this->getData($key, $bytes);
         $headers = [
@@ -468,7 +472,7 @@ class Client extends AbstractTus
      *
      * @return string
      */
-    protected function getData(string $key, int $bytes) : string
+    protected function getData($key, $bytes)
     {
         $file   = new File;
         $handle = $file->open($this->getFilePath(), $file::READ_BINARY);
@@ -493,7 +497,7 @@ class Client extends AbstractTus
      *
      * @return string
      */
-    protected function getUploadChecksumHeader() : string
+    protected function getUploadChecksumHeader()
     {
         return $this->getChecksumAlgorithm() . ' ' . base64_encode($this->getChecksum());
     }

@@ -90,7 +90,7 @@ class Server extends AbstractTus
      *
      * @return Server
      */
-    public function setUploadDir(string $path) : self
+    public function setUploadDir(string $path)
     {
         $this->uploadDir = $path;
 
@@ -164,7 +164,7 @@ class Server extends AbstractTus
      *
      * @return Server
      */
-    public function setUploadKey(string $key) : self
+    public function setUploadKey(string $key)
     {
         $this->uploadKey = $key;
 
@@ -200,7 +200,7 @@ class Server extends AbstractTus
      *
      * @return self
      */
-    public function setMiddleware(Middleware $middleware) : self
+    public function setMiddleware(Middleware $middleware)
     {
         $this->middleware = $middleware;
 
@@ -224,7 +224,7 @@ class Server extends AbstractTus
      *
      * @return Server
      */
-    public function setMaxUploadSize(int $uploadSize) : self
+    public function setMaxUploadSize(int $uploadSize)
     {
         $this->maxUploadSize = $uploadSize;
 

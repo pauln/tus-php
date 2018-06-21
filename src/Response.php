@@ -33,7 +33,7 @@ class Response
      *
      * @return self
      */
-    public function createOnly(bool $state) : self
+    public function createOnly(bool $state)
     {
         $this->createOnly = $state;
 
@@ -47,7 +47,7 @@ class Response
      *
      * @return Response
      */
-    public function setHeaders(array $headers) : self
+    public function setHeaders(array $headers)
     {
         $this->headers += $headers;
 
@@ -61,7 +61,7 @@ class Response
      *
      * @return Response
      */
-    public function replaceHeaders(array $headers) : self
+    public function replaceHeaders(array $headers)
     {
         $this->headers = $headers;
 

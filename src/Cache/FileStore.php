@@ -21,9 +21,9 @@ class FileStore extends AbstractCache
      * @param string|null $cacheDir
      * @param string      $cacheFile
      */
-    public function __construct(string $cacheDir = null, string $cacheFile = self::DEFAULT_CACHE_FILE)
+    public function __construct($cacheDir = null, $cacheFile = self::DEFAULT_CACHE_FILE)
     {
-        $cacheDir = $cacheDir ?? dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . '.cache' . DIRECTORY_SEPARATOR;
+        $cacheDir = $cacheDir ? $cacheDir : dirname(dirname(__DIR__)) . DIRECTORY_SEPARATOR . '.cache' . DIRECTORY_SEPARATOR;
 
         $this->setCacheDir($cacheDir);
         $this->setCacheFile($cacheFile);
@@ -36,7 +36,7 @@ class FileStore extends AbstractCache
      *
      * @return self
      */
-    public function setCacheDir(string $path) : self
+    public function setCacheDir($path)
     {
         $this->cacheDir = $path;
 
@@ -48,7 +48,7 @@ class FileStore extends AbstractCache
      *
      * @return string
      */
-    public function getCacheDir() : string
+    public function getCacheDir()
     {
         return $this->cacheDir;
     }
@@ -60,7 +60,7 @@ class FileStore extends AbstractCache
      *
      * @return self
      */
-    public function setCacheFile(string $file) : self
+    public function setCacheFile($file)
     {
         $this->cacheFile = $file;
 
@@ -72,7 +72,7 @@ class FileStore extends AbstractCache
      *
      * @return string
      */
-    public function getCacheFile() : string
+    public function getCacheFile()
     {
         return $this->cacheDir . $this->cacheFile;
     }
@@ -108,7 +108,7 @@ class FileStore extends AbstractCache
     /**
      * {@inheritDoc}
      */
-    public function get(string $key, bool $withExpired = false)
+    public function get($key, $withExpired = false)
     {
         $key      = $this->getActualCacheKey($key);
         $contents = $this->getCacheContents();
@@ -127,7 +127,7 @@ class FileStore extends AbstractCache
     /**
      * {@inheritDoc}
      */
-    public function set(string $key, $value)
+    public function set($key, $value)
     {
         $key       = $this->getActualCacheKey($key);
         $cacheFile = $this->getCacheFile();
@@ -136,7 +136,8 @@ class FileStore extends AbstractCache
             $this->createCacheFile();
         }
 
-        $contents = json_decode(file_get_contents($cacheFile), true) ?? [];
+        $contents = json_decode(file_get_contents($cacheFile), true);
+        $content = $contents ? $contents : [];
 
         if ( ! empty($contents[$key]) && is_array($value)) {
             $contents[$key] = $value + $contents[$key];
@@ -150,7 +151,7 @@ class FileStore extends AbstractCache
     /**
      * {@inheritDoc}
      */
-    public function delete(string $key) : bool
+    public function delete($key)
     {
         $key      = $this->getActualCacheKey($key);
         $contents = $this->getCacheContents();
@@ -167,7 +168,7 @@ class FileStore extends AbstractCache
     /**
      * {@inheritDoc}
      */
-    public function keys() : array
+    public function keys()
     {
         $contents = $this->getCacheContents();
 
@@ -185,10 +186,11 @@ class FileStore extends AbstractCache
      *
      * @return bool
      */
-    public function isValid(string $key) : bool
+    public function isValid($key)
     {
         $key  = $this->getActualCacheKey($key);
-        $meta = $this->getCacheContents()[$key] ?? [];
+        $meta = $this->getCacheContents()[$key];
+        $meta = $meta ? $meta : [];
 
         if (empty($meta['expires_at'])) {
             return false;
@@ -210,7 +212,8 @@ class FileStore extends AbstractCache
             return false;
         }
 
-        return json_decode(file_get_contents($cacheFile), true) ?? [];
+        $ret = json_decode(file_get_contents($cacheFile), true);
+        return $ret ? $ret : [];
     }
 
     /**
@@ -220,7 +223,7 @@ class FileStore extends AbstractCache
      *
      * @return string
      */
-    public function getActualCacheKey(string $key) : string
+    public function getActualCacheKey($key)
     {
         $prefix = $this->getPrefix();
 

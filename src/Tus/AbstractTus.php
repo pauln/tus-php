@@ -35,7 +35,7 @@ abstract class AbstractTus
      *
      * @return self
      */
-    public function setCache($cache) : self
+    public function setCache($cache)
     {
         if (is_string($cache)) {
             $this->cache = CacheFactory::make($cache);
@@ -51,7 +51,7 @@ abstract class AbstractTus
      *
      * @return Cacheable
      */
-    public function getCache() : Cacheable
+    public function getCache()
     {
         return $this->cache;
     }
@@ -63,7 +63,7 @@ abstract class AbstractTus
      *
      * @return self
      */
-    public function setApiPath(string $path) : self
+    public function setApiPath($path)
     {
         $this->apiPath = $path;
 
@@ -75,7 +75,7 @@ abstract class AbstractTus
      *
      * @return string
      */
-    public function getApiPath() : string
+    public function getApiPath()
     {
         return $this->apiPath;
     }
